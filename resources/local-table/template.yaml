@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  aws localstack local table
+
+Transform: "AWS::Serverless-2016-10-31"
+
+Parameters:
+
+  MessageTableName:
+    Type: String
+    Default: message-table
+
+Resources:  
+
+  messageTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: !Sub "${AWS::Region}-${MessageTableName}" 
+      PrimaryKey:
+        Name: id
+        Type: String
+  
+
+  # messageTableRole:
+  #   Type: "AWS::IAM::Role"
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service:
+  #               - dynamodb.amazonaws.com
+  #           Action:
+  #             - sts:AssumeRole
+  #     Path: "/"
+  #     Policies:
+  #     - PolicyName: root
+  #       PolicyDocument:
+  #         Version: '2012-10-17'
+  #         Statement:
+  #           - Effect: "Allow"
+  #             Action:
+  #               - "dynamodb:BatchGet*"
+  #               - "dynamodb:DescribeStream"
+  #               - "dynamodb:DescribeTable"
+  #               - "dynamodb:Get*"
+  #               - "dynamodb:Query"
+  #               - "dynamodb:Scan"
+  #               - "dynamodb:BatchWrite*"
+  #               - "dynamodb:CreateTable"
+  #               - "dynamodb:Delete*"
+  #               - "dynamodb:Update*"
+  #               - "dynamodb:PutItem"
+  #               - "dynamodb:DescribeTable"
+  #             Resource: "*"
+  #     - PolicyName: cloudWatch
+  #       PolicyDocument:
+  #         Version: '2012-10-17'
+  #         Statement:
+  #           - Effect: "Allow"
+  #             Action:
+  #               - "cloudwatch:PutMetricAlarm"
+  #               - "cloudwatch:DescribeAlarms"
+  #               - "cloudwatch:GetMetricStatistics"
+  #               - "cloudwatch:SetAlarmState"
+  #               - "cloudwatch:DeleteAlarms"
+  #             Resource: "*"
+
+Outputs:
+
+  messageTableArn:
+    Value: !GetAtt messageTable.Arn

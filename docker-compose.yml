@@ -1,0 +1,37 @@
+version: '3.9'
+
+services:
+  localstack:
+    container_name: localstack
+    hostname: localstack
+    image: localstack/localstack
+    network_mode: bridge
+    privileged: true
+    user: root
+    env_file:
+      - .env
+    environment:
+      - DEBUG=1
+      - USE_SSL=0
+      - DATA_DIR=/tmp/localstack/data
+      - LAMBDA_EXECUTOR=local
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+      - DOCKER_SOCK=/var/run/docker.sock
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - AWS_DEFAULT_REGION=us-east-1
+      - EDGE_PORT=4566
+      - HOSTNAME_EXTERNAL=localstack
+      - SERVICES=iam,s3,lambda,cloudformation,sts,apigateway,dynamodb,cloudwatch,sns,sqs,events
+    ports:
+      - "53:53"
+      - "53:53/udp"
+      - "443:443"
+      - "4510-4559:4510-4559"
+      - "4566:4566"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - ./localstack:/docker-entrypoint-initaws.d
+      - ./resources/local-table:/opt/code/localstack/table
+      - ./resources/local-queue:/opt/code/localstack/queue
+      - ./resources/local-lambda:/opt/code/localstack/lambda
+      - ./resources/local-bucket:/opt/code/localstack/bucket

@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  aws localstack local apigw
+
+Transform: "AWS::Serverless-2016-10-31"
+
+Resources:
+  startApiGateway:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: Demo API Gateway
+      ProtocolType: HTTP
+
+  startApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref startApiGateway
+      StageName: live
+      Description: Live Stage
+      AutoDeploy: true
+
+  startApiDomainName:
+    Type: AWS::ApiGatewayV2::DomainName
+    Properties:
+      DomainName: [YOUR-DOMAIN-NAME]
+      DomainNameConfigurations:
+        - EndpointType: REGIONAL
+          CertificateArn: [YOUR-ACM-CERTIFICATE-ARN]
+
+  DemoApiBasePathMapping:
+    Type: AWS::ApiGatewayV2::ApiMapping
+    Properties:
+      DomainName: [YOUR-DOMAIN-NAME]
+      ApiId: !Ref startApiGateway
+      Stage: !Ref startApiStage
+
+  DemoRecordSetGroup:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneId: [YOUR-HOSTED-ZONE-ID]
+      RecordSets:
+        - Name: [YOUR-DOMAIN-NAME]
+          Type: A
+          AliasTarget:
+            DNSName: !GetAtt startApiDomainName.RegionalDomainName
+            HostedZoneId: !GetAtt startApiDomainName.RegionalHostedZoneId

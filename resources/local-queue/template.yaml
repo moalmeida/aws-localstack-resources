@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  aws localstack local queue
+
+Transform: "AWS::Serverless-2016-10-31"
+
+Parameters:
+
+  MessageQueueName:
+    Type: String
+    Default: message-queue
+
+Resources:  
+
+  messageQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${AWS::Region}-${MessageQueueName}" 
+      VisibilityTimeout: 180
+      DelaySeconds: 0
+
+  # queuePolicy:
+  #   Type: AWS::SQS::QueuePolicy
+  #   Properties:
+  #     Queues:
+  #       - !Ref messageQueue
+  #     PolicyDocument:
+  #       Id: AllowIncomingAccess
+  #       Statement:
+  #         -
+  #           Effect: "Allow"
+  #           Principal:
+  #             AWS: "*"
+  #           Action:
+  #             - sqs:SendMessage
+  #             - sqs:ReceiveMessage
+  #             - sqs:DeleteMessage
+  #             - sqs:GetQueueUrl
+  #             - sqs:GetQueueAttributes
+  #             - sqs:ListQueueTags
+  #             - sqs:ChangeMessageVisibility
+  #           Resource:
+  #             - !GetAtt messageQueue.Arn
+
+Outputs:
+
+  messageQueueArn:
+    Value: !GetAtt messageQueue.Arn

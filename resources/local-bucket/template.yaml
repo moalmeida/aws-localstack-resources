@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  aws localstack local bucket
+
+Transform: "AWS::Serverless-2016-10-31"
+
+Parameters:
+
+  MessageBucketName:
+    Type: String
+    Default: message
+
+Resources:  
+
+  messageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::Region}-${MessageBucketName}" 
+      AccessControl: PublicReadWrite
+      VersioningConfiguration:
+        Status: Enabled
+
+Outputs:
+
+  messageBucketArn:
+    Value: !GetAtt messageBucket.Arn

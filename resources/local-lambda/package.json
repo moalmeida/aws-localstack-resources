@@ -1,0 +1,15 @@
+{
+    "name": "local-lambda",
+    "version": "0.0.1",
+    "private": true,
+    "devDependencies": {
+        "aws-sdk": "^2.1087.0",
+        "jest": "^26.6.3"
+    },
+    "scripts": {
+        "test": "jest"
+    },
+    "dependencies": {
+        "@faker-js/faker": "^6.0.0-alpha.7"
+    }
+}

@@ -1,0 +1,158 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  aws localstack local api lambda
+
+Transform: "AWS::Serverless-2016-10-31"
+
+Parameters:
+
+  StageName:
+    Type: String
+    Default: local
+  BucketUri:
+    Type: String
+    Default: bucket
+  BucketKey:
+    Type: String
+    Default: any.zip
+  HealthFunctionName:
+    Type: String
+    Default: health-function
+  GenerateMessageFunctionName:
+    Type: String
+    Default: message-function
+  PollMessageFunctionName:
+    Type: String
+    Default: message-function
+  ListMessageFunctionName:
+    Type: String
+    Default: message-function
+  MessageQueueArn:
+    Type: String
+    Default: message-queue
+  MessageQueueUrl:
+    Type: String
+    Default: message-queue
+  MessageTableName:
+    Type: String
+    Default: message-table
+
+Resources:  
+
+  healthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::Region}-${HealthFunctionName}" 
+      Runtime: nodejs14.x
+      CodeUri:
+        Bucket: !Ref BucketUri
+        Key: !Ref BucketKey
+      Handler: health.handler
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Sub "${AWS::Region}-${HealthFunctionName}"
+      Events:
+        HealthEvent:
+          Type: Api
+          Properties:
+            Path: /health
+            Method: get
+            RestApiId:
+              Ref: httpApi
+
+  generateMessageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::Region}-${GenerateMessageFunctionName}" 
+      Environment:
+        Variables:
+          MESSAGE_QUEUE_URL: !Ref MessageQueueUrl
+      Runtime: nodejs14.x
+      CodeUri:
+        Bucket: !Ref BucketUri
+        Key: !Ref BucketKey
+      Handler: generateMessage.handler
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Sub "${AWS::Region}-${GenerateMessageFunctionName}" 
+        - SQSSendMessagePolicy:
+            QueueName: !Ref MessageQueueArn
+      Events:
+        ScheduleEvent:
+          Type: Schedule
+          Properties:
+            Schedule: 'rate(1 minute)'
+            Name: GenerateMessageSchedule
+            Enabled: true
+
+  pollMessageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::Region}-${PollMessageFunctionName}" 
+      Environment:
+        Variables:
+          MESSAGE_TABLE_NAME: !Ref MessageTableName
+      Runtime: nodejs14.x
+      CodeUri:
+        Bucket: !Ref BucketUri
+        Key: !Ref BucketKey
+      Handler: pollMessage.handler
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Sub "${AWS::Region}-${PollMessageFunctionName}" 
+        - SQSPollerPolicy:
+            QueueName: !Ref MessageQueueArn
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MessageTableName
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !Ref MessageQueueArn
+            BatchSize: 1
+            Enabled: true
+
+  listMessageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::Region}-${ListMessageFunctionName}" 
+      Environment:
+        Variables:
+          MESSAGE_TABLE_NAME: !Ref MessageTableName
+      Runtime: nodejs14.x
+      CodeUri:
+        Bucket: !Ref BucketUri
+        Key: !Ref BucketKey
+      Handler: listMessage.handler
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Sub "${AWS::Region}-${ListMessageFunctionName}" 
+        - DynamoDBReadPolicy:
+            TableName: !Ref MessageTableName
+      Events:
+        ListMessageEvent:
+          Type: Api
+          Properties:
+            Path: /list
+            Method: get
+            RestApiId:
+              Ref: httpApi
+
+  httpApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref StageName
+
+Outputs:
+
+  httpApiUrl:
+    Value:
+      Fn::Sub: 'https://${httpApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/${StageName}/'
+
+  localstackApiUrl:
+    Value:
+      Fn::Sub: 'http://localhost:4566/restapis/${httpApi}/${StageName}/_user_request_'
+
+  httpApiId:
+    Value:
+      Ref: httpApi
